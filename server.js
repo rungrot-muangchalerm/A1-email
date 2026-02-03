@@ -4,7 +4,7 @@ const express = require('express');
 const { SMTPServer } = require('smtp-server');
 const { simpleParser } = require('mailparser');
 
-const HTTP_PORT = Number(process.env.PORT) || 3000;
+const HTTP_PORT = Number(process.env.PORT) || 9000;
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 2525;
 const DOMAIN = (process.env.DOMAIN || 'rungrot.com').toLowerCase();
 
