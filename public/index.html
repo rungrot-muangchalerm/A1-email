@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temp Email – rungrot.com</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="header">
+      <h1 class="logo">rungrot.com</h1>
+      <p class="tagline">อีเมลชั่วคราว ใช้แล้วทิ้ง</p>
+    </header>
+
+    <main class="main">
+      <section class="card">
+        <p class="label">อีเมลของคุณ</p>
+        <div class="email-row">
+          <output id="emailDisplay" class="email-display" aria-live="polite">กดปุ่มด้านล่างเพื่อสร้างอีเมล</output>
+          <button type="button" id="copyBtn" class="btn btn-secondary" title="คัดลอก" disabled>
+            <span class="btn-text">คัดลอก</span>
+            <span class="btn-icon" aria-hidden="true">⎘</span>
+          </button>
+        </div>
+        <button type="button" id="genBtn" class="btn btn-primary">
+          <span class="btn-text">Gen Email</span>
+        </button>
+      </section>
+
+      <section class="mailbox" id="mailboxSection" hidden>
+        <h2 class="mailbox-title">กล่องจดหมาย</h2>
+        <div id="inboxList" class="inbox-list"></div>
+        <p id="inboxEmpty" class="inbox-empty">ยังไม่มีจดหมาย</p>
+      </section>
+
+      <p class="hint">
+        ใช้ที่อยู่นี้รับรหัสยืนยันหรือจดหมายชั่วคราว แล้วทิ้งได้เลย ไม่ต้องสมัคร
+      </p>
+    </main>
+
+    <footer class="footer">
+      <p>@ rungrot.com – Temp Mail</p>
+    </footer>
+  </div>
+
+  <div id="emailModal" class="modal" hidden>
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h3 id="modalSubject" class="modal-subject"></h3>
+        <button type="button" class="modal-close" id="modalClose" aria-label="ปิด">×</button>
+      </header>
+      <div class="modal-meta">
+        <span id="modalFrom"></span>
+        <span id="modalDate"></span>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
