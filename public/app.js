@@ -12,8 +12,8 @@
   var mailboxSection = document.getElementById('mailboxSection');
   var inboxList = document.getElementById('inboxList');
   var inboxEmpty = document.getElementById('inboxEmpty');
-  var emailModal = document.getElementById('emailModal');
-  var modalBackdrop = document.getElementById('modalBackdrop');
+  var emailModalEl = document.getElementById('emailModal');
+  var bsModal = typeof bootstrap !== 'undefined' ? bootstrap.Modal.getOrCreateInstance(emailModalEl) : null;
   var modalClose = document.getElementById('modalClose');
   var modalSubject = document.getElementById('modalSubject');
   var modalFrom = document.getElementById('modalFrom');
@@ -67,7 +67,7 @@
         list.forEach(function (msg) {
           var el = document.createElement('button');
           el.type = 'button';
-          el.className = 'inbox-item';
+          el.className = 'list-group-item list-group-item-action inbox-item';
           el.innerHTML =
             '<p class="inbox-item-subject">' + escapeHtml(msg.subject || '(ไม่มีหัวข้อ)') + '</p>' +
             '<p class="inbox-item-from">จาก: ' + escapeHtml(msg.from || '') + '</p>';
@@ -110,7 +110,7 @@
     } else {
       modalBody.textContent = body || '(ไม่มีเนื้อความ)';
     }
-    emailModal.hidden = false;
+    if (bsModal) bsModal.show(); else emailModalEl.style.display = 'flex';
   }
 
   function escapeAttr(s) {
@@ -124,7 +124,7 @@
   }
 
   function closeModal() {
-    emailModal.hidden = true;
+    if (bsModal) bsModal.hide(); else if (emailModalEl) emailModalEl.style.display = 'none';
   }
 
   genBtn.addEventListener('click', function () {
@@ -172,6 +172,5 @@
     }, 1500);
   }
 
-  modalBackdrop.addEventListener('click', closeModal);
-  modalClose.addEventListener('click', closeModal);
+  if (modalClose) modalClose.addEventListener('click', closeModal);
 })();

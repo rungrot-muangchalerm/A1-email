@@ -4,64 +4,69 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Temp Email – rungrot.com</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="wrap">
-    <header class="header">
-      <h1 class="logo">rungrot.com</h1>
-      <p class="tagline">อีเมลชั่วคราว ใช้แล้วทิ้ง</p>
+<body class="d-flex justify-content-center align-items-center min-vh-100 py-4">
+  <div class="container" style="max-width: 560px;">
+    <header class="text-center mb-4">
+      <h1 class="logo mb-1">rungrot.com</h1>
+      <p class="tagline mb-0">อีเมลชั่วคราว ใช้แล้วทิ้ง</p>
     </header>
 
-    <main class="main">
-      <section class="card">
-        <p class="label">อีเมลของคุณ</p>
-        <div class="email-row">
-          <output id="emailDisplay" class="email-display" aria-live="polite">กดปุ่มด้านล่างเพื่อสร้างอีเมล</output>
-          <button type="button" id="copyBtn" class="btn btn-secondary" title="คัดลอก" disabled>
-            <span class="btn-text">คัดลอก</span>
-            <span class="btn-icon" aria-hidden="true">⎘</span>
+    <main class="card main-card">
+      <div class="card-body">
+        <section>
+          <label class="form-label label-muted">อีเมลของคุณ</label>
+          <div class="input-group mb-3">
+            <output id="emailDisplay" class="form-control email-display" aria-live="polite">กดปุ่มด้านล่างเพื่อสร้างอีเมล</output>
+            <button type="button" id="copyBtn" class="btn btn-outline-secondary" title="คัดลอก" disabled>
+              <span class="btn-text">คัดลอก</span>
+            </button>
+          </div>
+          <button type="button" id="genBtn" class="btn btn-primary w-100 py-2">
+            Gen Email
           </button>
-        </div>
-        <button type="button" id="genBtn" class="btn btn-primary">
-          <span class="btn-text">Gen Email</span>
-        </button>
-      </section>
+        </section>
 
-      <section class="mailbox" id="mailboxSection" hidden>
-        <h2 class="mailbox-title">กล่องจดหมาย</h2>
-        <div id="inboxList" class="inbox-list"></div>
-        <p id="inboxEmpty" class="inbox-empty">ยังไม่มีจดหมาย</p>
-      </section>
+        <section class="mailbox mt-4 pt-4 border-top border-secondary" id="mailboxSection" hidden>
+          <h2 class="h6 fw-semibold text-muted mb-3">กล่องจดหมาย</h2>
+          <div id="inboxList" class="list-group list-group-flush gap-2"></div>
+          <p id="inboxEmpty" class="text-muted text-center py-3 mb-0 small">ยังไม่มีจดหมาย</p>
+        </section>
 
-      <p class="hint">
-        ใช้ที่อยู่นี้รับรหัสยืนยันหรือจดหมายชั่วคราว แล้วทิ้งได้เลย ไม่ต้องสมัคร
-      </p>
+        <p class="hint text-muted small text-center mt-4 mb-0">
+          ใช้ที่อยู่นี้รับรหัสยืนยันหรือจดหมายชั่วคราว แล้วทิ้งได้เลย ไม่ต้องสมัคร
+        </p>
+      </div>
     </main>
 
-    <footer class="footer">
-      <p>@ rungrot.com – Temp Mail</p>
+    <footer class="text-center mt-4 footer-text">
+      <p class="mb-0">@ rungrot.com – Temp Mail</p>
     </footer>
   </div>
 
-  <div id="emailModal" class="modal" hidden>
-    <div class="modal-backdrop" id="modalBackdrop"></div>
-    <div class="modal-content">
-      <header class="modal-header">
-        <h3 id="modalSubject" class="modal-subject"></h3>
-        <button type="button" class="modal-close" id="modalClose" aria-label="ปิด">×</button>
-      </header>
-      <div class="modal-meta">
-        <span id="modalFrom"></span>
-        <span id="modalDate"></span>
+  <!-- Modal ดูเมล -->
+  <div class="modal fade" id="emailModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content modal-content-dark">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title flex-grow-1 pe-2" id="modalSubject"></h5>
+          <button type="button" class="btn-close btn-close-white" id="modalClose" aria-label="ปิด"></button>
+        </div>
+        <div class="modal-body modal-meta py-2 px-4 small text-muted">
+          <span id="modalFrom"></span>
+          <span class="ms-2" id="modalDate"></span>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
       </div>
-      <div id="modalBody" class="modal-body"></div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
