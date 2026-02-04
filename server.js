@@ -7,6 +7,7 @@ const { simpleParser } = require('mailparser');
 const HTTP_PORT = Number(process.env.PORT) || 9000;
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 2525;
 const DOMAIN = (process.env.DOMAIN || 'rungrot.com').toLowerCase();
+const INBOUND_SECRET = process.env.INBOUND_EMAIL_SECRET || '';
 
 // เก็บเมลในหน่วยความจำ: key = localPart (ตัวก่อน @), value = array of { id, from, subject, text, html, date }
 const inbox = new Map();
@@ -23,7 +24,35 @@ function getLocalPart(address) {
 }
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+
+// รับ raw MIME จาก Cloudflare Email Worker (ต้องใช้ก่อน route อื่นที่อ่าน body)
+app.post('/api/inbound-email-raw', express.raw({ type: 'message/rfc822', limit: '10mb' }), (req, res) => {
+  if (INBOUND_SECRET && req.headers['x-webhook-secret'] !== INBOUND_SECRET) {
+    return res.status(401).json({ ok: false, error: 'Invalid secret' });
+  }
+  const raw = req.body;
+  if (!raw || !Buffer.isBuffer(raw)) {
+    return res.status(400).json({ ok: false, error: 'No body' });
+  }
+  simpleParser(raw, (err, parsed) => {
+    if (err) return res.status(400).json({ ok: false, error: String(err.message) });
+    const toAddr = parsed.to?.text || parsed.to?.value?.[0]?.address || '';
+    const local = getLocalPart(toAddr);
+    if (!local) return res.status(400).json({ ok: false, error: 'Invalid to' });
+    const msg = {
+      id: idCounter++,
+      from: parsed.from?.text || parsed.from?.value?.[0]?.address || '',
+      subject: parsed.subject || '',
+      text: parsed.text || '',
+      html: parsed.html || '',
+      date: parsed.date ? new Date(parsed.date).toISOString() : new Date().toISOString(),
+    };
+    if (!inbox.has(local)) inbox.set(local, []);
+    inbox.get(local).unshift(msg);
+    res.json({ ok: true, local });
+  });
+});
 
 // static files จาก public
 app.use(express.static(path.join(__dirname, 'public')));
@@ -36,6 +65,29 @@ app.get('/api/inbox/:localPart', (req, res) => {
   }
   const list = inbox.get(local) || [];
   res.json(list);
+});
+
+// API: รับเมลแบบ JSON จาก webhook อื่น (ไม่ต้องชี้ MX มาที่เซิร์ฟเวอร์)
+app.post('/api/inbound-email', (req, res) => {
+  if (INBOUND_SECRET && req.headers['x-webhook-secret'] !== INBOUND_SECRET) {
+    return res.status(401).json({ ok: false, error: 'Invalid secret' });
+  }
+  const { to, from, subject, text, html } = req.body || {};
+  const local = getLocalPart(to || req.body?.toAddress);
+  if (!local) {
+    return res.status(400).json({ ok: false, error: 'Invalid to address' });
+  }
+  const msg = {
+    id: idCounter++,
+    from: from || req.body?.from || '',
+    subject: subject || req.body?.subject || '',
+    text: text || req.body?.text || '',
+    html: html || req.body?.html || '',
+    date: new Date().toISOString(),
+  };
+  if (!inbox.has(local)) inbox.set(local, []);
+  inbox.get(local).unshift(msg);
+  res.json({ ok: true, local });
 });
 
 // หน้าแรก
