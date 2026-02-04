@@ -35,6 +35,21 @@ body {
   font-size: 0.85rem;
 }
 
+/* ปุ่มอีเมลที่สร้างไว้ */
+.email-chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.email-chip.active {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--bg) !important;
+}
+
 /* ช่องอีเมล */
 .email-display {
   background: var(--bg) !important;

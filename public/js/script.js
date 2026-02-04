@@ -5,7 +5,11 @@
   var LENGTH = 10;
   var CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
   var INBOX_POLL_MS = 5000;
+  var STORAGE_ADDRESSES = 'temp_email_addresses';
+  var STORAGE_INBOX_PREFIX = 'temp_inbox_';
 
+  var emailListSection = document.getElementById('emailListSection');
+  var emailListContainer = document.getElementById('emailListContainer');
   var display = document.getElementById('emailDisplay');
   var genBtn = document.getElementById('genBtn');
   var copyBtn = document.getElementById('copyBtn');
@@ -21,7 +25,44 @@
   var modalBody = document.getElementById('modalBody');
 
   var currentLocalPart = null;
+  var currentEmail = null;
   var pollTimer = null;
+
+  function getStoredAddresses() {
+    try {
+      var raw = localStorage.getItem(STORAGE_ADDRESSES);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setStoredAddresses(arr) {
+    try {
+      localStorage.setItem(STORAGE_ADDRESSES, JSON.stringify(arr));
+    } catch (e) {}
+  }
+
+  function getStoredInbox(localPart) {
+    if (!localPart) return [];
+    try {
+      var raw = localStorage.getItem(STORAGE_INBOX_PREFIX + localPart);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setStoredInbox(localPart, list) {
+    if (!localPart) return;
+    try {
+      localStorage.setItem(STORAGE_INBOX_PREFIX + localPart, JSON.stringify(list));
+    } catch (e) {}
+  }
 
   function randomString(len) {
     var s = '';
@@ -36,13 +77,57 @@
     return local + '@' + DOMAIN;
   }
 
-  function setEmail(email) {
+  function renderEmailList() {
+    var addresses = getStoredAddresses();
+    emailListContainer.innerHTML = '';
+    if (addresses.length === 0) {
+      emailListSection.hidden = true;
+      return;
+    }
+    emailListSection.hidden = false;
+    addresses.forEach(function (email) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-sm btn-outline-secondary email-chip';
+      if (email === currentEmail) btn.classList.add('active');
+      btn.textContent = email;
+      btn.title = email;
+      btn.addEventListener('click', function () {
+        selectEmail(email);
+      });
+      emailListContainer.appendChild(btn);
+    });
+  }
+
+  function selectEmail(email) {
+    currentEmail = email;
+    var local = email.split('@')[0];
+    currentLocalPart = local;
     display.textContent = email;
     display.classList.add('filled');
     copyBtn.disabled = false;
+    mailboxSection.hidden = false;
+    renderEmailList();
+    renderInboxFromStorage();
+    startInboxPoll();
+    fetchInbox();
+  }
+
+  function setEmail(email) {
+    currentEmail = email;
     var local = email.split('@')[0];
     currentLocalPart = local;
+    var addresses = getStoredAddresses();
+    if (addresses.indexOf(email) === -1) {
+      addresses.push(email);
+      setStoredAddresses(addresses);
+      setStoredInbox(local, []);
+    }
+    display.textContent = email;
+    display.classList.add('filled');
+    copyBtn.disabled = false;
     mailboxSection.hidden = false;
+    renderEmailList();
     inboxList.innerHTML = '';
     inboxEmpty.classList.remove('hidden');
     startInboxPoll();
@@ -53,31 +138,42 @@
     return '/api/inbox/' + encodeURIComponent(currentLocalPart);
   }
 
+  function renderInboxFromStorage() {
+    var list = getStoredInbox(currentLocalPart);
+    inboxList.innerHTML = '';
+    if (!list || list.length === 0) {
+      inboxEmpty.classList.remove('hidden');
+      inboxEmpty.textContent = 'ยังไม่มีจดหมาย';
+      return;
+    }
+    inboxEmpty.classList.add('hidden');
+    list.forEach(function (msg) {
+      var el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'list-group-item list-group-item-action inbox-item';
+      el.innerHTML =
+        '<p class="inbox-item-subject">' + escapeHtml(msg.subject || '(ไม่มีหัวข้อ)') + '</p>' +
+        '<p class="inbox-item-from">จาก: ' + escapeHtml(msg.from || '') + '</p>';
+      el.addEventListener('click', function () { openEmail(msg); });
+      inboxList.appendChild(el);
+    });
+  }
+
   function fetchInbox() {
     if (!currentLocalPart) return;
     fetch(getInboxUrl())
       .then(function (res) { return res.ok ? res.json() : []; })
       .then(function (list) {
-        inboxList.innerHTML = '';
-        if (!list || list.length === 0) {
-          inboxEmpty.classList.remove('hidden');
-          return;
-        }
-        inboxEmpty.classList.add('hidden');
-        list.forEach(function (msg) {
-          var el = document.createElement('button');
-          el.type = 'button';
-          el.className = 'list-group-item list-group-item-action inbox-item';
-          el.innerHTML =
-            '<p class="inbox-item-subject">' + escapeHtml(msg.subject || '(ไม่มีหัวข้อ)') + '</p>' +
-            '<p class="inbox-item-from">จาก: ' + escapeHtml(msg.from || '') + '</p>';
-          el.addEventListener('click', function () { openEmail(msg); });
-          inboxList.appendChild(el);
-        });
+        if (!list || !Array.isArray(list)) list = [];
+        setStoredInbox(currentLocalPart, list);
+        renderInboxFromStorage();
       })
       .catch(function () {
-        inboxEmpty.classList.remove('hidden');
-        inboxEmpty.textContent = 'โหลดกล่องจดหมายไม่ได้';
+        var list = getStoredInbox(currentLocalPart);
+        if (list.length === 0) {
+          inboxEmpty.classList.remove('hidden');
+          inboxEmpty.textContent = 'โหลดกล่องจดหมายไม่ได้';
+        }
       });
   }
 
@@ -134,7 +230,7 @@
 
   copyBtn.addEventListener('click', function () {
     var email = display.textContent;
-    if (!email || email === 'กดปุ่มด้านล่างเพื่อสร้างอีเมล') return;
+    if (!email || email === 'กด Gen Email เพื่อสร้างอีเมล') return;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(email).then(function () {
@@ -173,4 +269,15 @@
   }
 
   if (modalClose) modalClose.addEventListener('click', closeModal);
+
+  // โหลดจาก localStorage ตอนเปิดหน้า
+  (function init() {
+    var addresses = getStoredAddresses();
+    if (addresses.length > 0) {
+      selectEmail(addresses[addresses.length - 1]);
+    } else {
+      display.textContent = 'กด Gen Email เพื่อสร้างอีเมล';
+      copyBtn.disabled = true;
+    }
+  })();
 })();
